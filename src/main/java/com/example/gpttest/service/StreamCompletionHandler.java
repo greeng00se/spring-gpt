@@ -47,18 +47,18 @@ public class StreamCompletionHandler extends TextWebSocketHandler {
                 GPTCompletionRequest.class);
 
         sessionHashMap.keySet().forEach(key -> {
-            streamCompletion(key, completionRequest);
+            streamCompletion(key, completionRequest, session);
         });
     }
 
-    private void streamCompletion(String key, GPTCompletionRequest completionRequest) {
+    private void streamCompletion(String key, GPTCompletionRequest completionRequest, WebSocketSession session) {
         openAiService.streamChatCompletion(GPTCompletionRequest.of(completionRequest))
                 .blockingForEach(completion -> {
                     sessionHashMap.get(key).sendMessage(
                             new TextMessage(toMessage(completion))
                     );
                     if ("stop".equals(completion.getChoices().get(0).getFinishReason())) {
-                        sessionHashMap.get(key).sendMessage(new TextMessage("[DONE]"));
+                        session.close();
                     }
                 });
     }
